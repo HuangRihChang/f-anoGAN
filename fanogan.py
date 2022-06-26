@@ -253,11 +253,11 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
 
-    fanogan_model = FAnoGAN()
+    fanogan_model = FAnoGAN().to(device)
     _, dataloader = one_class_dataloader(options.c, 0, BATCH_SIZE)
     for (x, label) in dataloader:
         break 
-    writer.add_graph(fanogan_model, x)
+    writer.add_graph(fanogan_model, x.to(device))
 
     fanogan_model.wgan_training()
     fanogan_model.train_encoder()
