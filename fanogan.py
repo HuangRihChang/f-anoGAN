@@ -112,7 +112,7 @@ class FAnoGAN(nn.Module):
             ###########################
             self.netG.eval()
             self.netD.train()
-            G_ITER = int(G_ITER/i)
+            G_ITER = int(G_ITER/iteration)
             for i in range(CRITIC_ITERS):
                 for (_data, _) in dataloader:
                     self.netD.zero_grad()
