@@ -12,7 +12,6 @@ from wgan64x64 import *
 from sklearn import metrics
 import torch
 import numpy as np
-import time
 import os
 import sys
 from tqdm import tqdm
@@ -27,7 +26,7 @@ sys.path.append(os.getcwd())
 MODE = 'wgan-gp'  # Valid options are dcgan, wgan, or wgan-gp
 DIM = 64  # This overfits substantially; you're probably better off with 64
 LAMBDA = 10  # Gradient penalty lambda hyperparameter
-CRITIC_ITERS = 5  # How many critic iterations per generator iteration
+CRITIC_ITERS = 1  # How many critic iterations per generator iteration
 BATCH_SIZE = 64  # Batch size
 ITERS = 100000  # How many generator iterations to train for
 OUTPUT_DIM = 3 * 64 * 64  # Number of pixels in image (3*64*64)
@@ -136,12 +135,17 @@ class FAnoGAN(nn.Module):
                     D_cost_list.append(D_cost.item())
                     # Wasserstein_D = D_real - D_fake
                     self.optimizerD.step()
+                    tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
+                                D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
+                                Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
+                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0
+                                )
             ###########################
             # (2) Update G network
             ###########################
             self.netD.eval()
             self.netG.train()
-            G_ITER = int(len(dataloader)//BATCH_SIZE)
+            G_ITER = int((len(dataloader)//BATCH_SIZE)*0.1 + 1)
             for _ in range(G_ITER):
                 self.netG.zero_grad()
                 noise = torch.randn(BATCH_SIZE, 128)
@@ -153,12 +157,13 @@ class FAnoGAN(nn.Module):
                 self.optimizerG.step()
                 G_cost_list.append(G_cost.item())
 
-            tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list), D_fake=np.mean(D_fake_list),
-                            Loss_D=np.mean(D_cost_list),
-                            Loss_G=np.mean(G_cost_list)
-                          )
+                tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
+                                D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
+                                Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
+                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0
+                                )
             #save samples
-            if iteration % 100 == 0 or iteration==ITERS:
+            if iteration % 10 == 0 or iteration==ITERS:
                 save_image(fake*0.5+0.5, 'wgangp/{}.jpg'.format(iteration))
 
     def train_encoder(self):
