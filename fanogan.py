@@ -101,6 +101,8 @@ class FAnoGAN(nn.Module):
         mone = one * -1
         
         dataloader, _ = one_class_dataloader(options.c, 1, BATCH_SIZE)
+        G_ITER = int((len(dataloader)//BATCH_SIZE)*0.1 + 1)
+        print(f"Train with {G_ITER} for Generator and {len(dataloader)} for Critic for each epoch")
         D_real_list, D_fake_list, D_cost_list, G_cost_list = [], [], [], []
 
         tk = tqdm(range(1, ITERS + 1))
@@ -146,7 +148,6 @@ class FAnoGAN(nn.Module):
             ###########################
             self.netD.eval()
             self.netG.train()
-            G_ITER = int((len(dataloader)//BATCH_SIZE)*0.1 + 1)
             for _ in range(G_ITER):
                 self.netG.zero_grad()
                 noise = torch.randn(BATCH_SIZE, 128)
