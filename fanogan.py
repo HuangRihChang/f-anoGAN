@@ -101,7 +101,7 @@ class FAnoGAN(nn.Module):
         mone = one * -1
         
         dataloader, _ = one_class_dataloader(options.c, 1, BATCH_SIZE)
-        G_ITER = int((len(dataloader)//BATCH_SIZE)*0.1 + 1)
+        G_ITER = int((len(dataloader)//BATCH_SIZE)*0.2 + 1)
         print(f"Train with {G_ITER} for Generator and {len(dataloader)} for Critic for each epoch")
         D_real_list, D_fake_list, D_cost_list, G_cost_list = [], [], [], []
 
