@@ -15,7 +15,7 @@ import numpy as np
 import time
 import os
 import sys
-import tqdm
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 sys.path.append(os.getcwd())
 
