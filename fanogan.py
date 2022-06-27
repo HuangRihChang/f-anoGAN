@@ -113,6 +113,7 @@ class FAnoGAN(nn.Module):
             self.netG.eval()
             self.netD.train()
             for i in range(CRITIC_ITERS):
+                G_ITER = int(G_ITER/i)
                 for (_data, _) in dataloader:
                     self.netD.zero_grad()
                     # train with real
@@ -141,6 +142,7 @@ class FAnoGAN(nn.Module):
                                 D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
                                 Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
                                 Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                                G_ITER = G_ITER,
                                 phrase = "Critic"
                                 )
             ###########################
@@ -163,6 +165,7 @@ class FAnoGAN(nn.Module):
                                 D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
                                 Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
                                 Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                                G_ITER = G_ITER,
                                 phrase = "Genertor"
                                 )
             #save samples
