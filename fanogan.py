@@ -138,7 +138,8 @@ class FAnoGAN(nn.Module):
                     tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
                                 D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
                                 Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
-                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0
+                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                                phrase = "Critic"
                                 )
             ###########################
             # (2) Update G network
@@ -160,7 +161,8 @@ class FAnoGAN(nn.Module):
                 tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
                                 D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
                                 Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
-                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0
+                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                                phrase = "Genertor"
                                 )
             #save samples
             if iteration % 10 == 0 or iteration==ITERS:
