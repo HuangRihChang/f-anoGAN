@@ -15,7 +15,7 @@ import numpy as np
 import time
 import os
 import sys
-import random
+import tqdm
 import matplotlib.pyplot as plt
 sys.path.append(os.getcwd())
 
@@ -101,57 +101,65 @@ class FAnoGAN(nn.Module):
         one = torch.FloatTensor([1]).squeeze().to(device)
         mone = one * -1
         
-        dataloader, _ = one_class_dataloader(options.c, 2, BATCH_SIZE)
+        dataloader, _ = one_class_dataloader(options.c, 1, BATCH_SIZE)
         D_real_list, D_fake_list, D_cost_list, G_cost_list = [], [], [], []
-        for iteration in range(1, ITERS + 1):
-            start_time = time.time()
+
+        tk = tqdm(range(1, ITERS + 1))
+        for iteration in tk:
             ###########################
             # (1) Update D network
             ###########################
-            for i, (_data, _) in enumerate(dataloader):
-                if i == CRITIC_ITERS:
-                    break
-                self.netD.zero_grad()
-                # train with real
-                real_data = _data.to(device)
-                D_real = self.netD(real_data)
-                D_real = D_real.mean()
-                D_real.backward(mone)
-                D_real_list.append(D_real.item())
-                # train with fake
-                noise = torch.randn(BATCH_SIZE, NOISE_SIZE)
-                noise = noise.to(device)
-                fake = self.netG(noise).detach()
-                inputv = fake
-                D_fake = self.netD(inputv)
-                D_fake = D_fake.mean()
-                D_fake.backward(one)
-                D_fake_list.append(D_fake.item())
-                # train with gradient penalty
-                gradient_penalty = calc_gradient_penalty(self.netD, real_data.data, fake.data)
-                gradient_penalty.backward()
-                D_cost = D_fake - D_real + gradient_penalty
-                D_cost_list.append(D_cost.item())
-                # Wasserstein_D = D_real - D_fake
-                self.optimizerD.step()
+            self.netG.eval()
+            self.netD.train()
+            for i in range(CRITIC_ITERS):
+                for (_data, _) in dataloader:
+                    self.netD.zero_grad()
+                    # train with real
+                    real_data = _data.to(device)
+                    D_real = self.netD(real_data)
+                    D_real = D_real.mean()
+                    D_real.backward(mone)
+                    D_real_list.append(D_real.item())
+                    # train with fake
+                    noise = torch.randn(BATCH_SIZE, NOISE_SIZE)
+                    noise = noise.to(device)
+                    fake = self.netG(noise).detach()
+                    inputv = fake
+                    D_fake = self.netD(inputv)
+                    D_fake = D_fake.mean()
+                    D_fake.backward(one)
+                    D_fake_list.append(D_fake.item())
+                    # train with gradient penalty
+                    gradient_penalty = calc_gradient_penalty(self.netD, real_data.data, fake.data)
+                    gradient_penalty.backward()
+                    D_cost = D_fake - D_real + gradient_penalty
+                    D_cost_list.append(D_cost.item())
+                    # Wasserstein_D = D_real - D_fake
+                    self.optimizerD.step()
             ###########################
             # (2) Update G network
             ###########################
-            self.netG.zero_grad()
-            noise = torch.randn(BATCH_SIZE, 128)
-            noise = noise.to(device)
-            fake = self.netG(noise)
-            G = self.netD(fake).mean()
-            G.backward(mone)
-            G_cost = -G
-            self.optimizerG.step()
-            G_cost_list.append(G_cost.item())
+            self.netD.eval()
+            self.netG.train()
+            G_ITER = int(len(dataloader)//BATCH_SIZE)
+            for _ in range(G_ITER):
+                self.netG.zero_grad()
+                noise = torch.randn(BATCH_SIZE, 128)
+                noise = noise.to(device)
+                fake = self.netG(noise)
+                G = self.netD(fake).mean()
+                G.backward(mone)
+                G_cost = -G
+                self.optimizerG.step()
+                G_cost_list.append(G_cost.item())
 
-            # Write logs and save samples
-            if iteration % 20 == 0:
+            tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list), D_fake=np.mean(D_fake_list),
+                            Loss_D=np.mean(D_cost_list),
+                            Loss_G=np.mean(G_cost_list)
+                          )
+            #save samples
+            if iteration % 100 == 0 or iteration==ITERS:
                 save_image(fake*0.5+0.5, 'wgangp/{}.jpg'.format(iteration))
-                print(f'Iters:{iteration}, D(real):{np.mean(D_real_list)}, D(fake):{np.mean(D_fake_list)}, \
-                        Loss D:{np.mean(D_cost_list)}, Loss G:{np.mean(G_cost_list)}')
 
     def train_encoder(self):
         self.netG.eval()
@@ -165,7 +173,8 @@ class FAnoGAN(nn.Module):
 
         crit = nn.MSELoss()
 
-        for e in range(300):
+        tk = tqdm(range(300))
+        for e in tk:
             losses = []
             self.netE.train()
             for (x, _) in dataloader:
@@ -180,7 +189,7 @@ class FAnoGAN(nn.Module):
                 loss.backward()
                 self.optimizerE.step()
                 losses.append(loss.item())
-            print(e, np.mean(losses))
+            tk.set_postfix(e=e, loss=np.mean(losses))
             self.netE.eval()
             rec_image = self.netG(self.netE(x))
             d_input = torch.cat((x, rec_image), dim=0)
@@ -259,6 +268,11 @@ if __name__ == '__main__':
         break 
     writer.add_graph(fanogan_model, x.to(device))
 
+    print("Train WGAN")
     fanogan_model.wgan_training()
+    print("Train Encoder")
     fanogan_model.train_encoder()
+    print("Evaluating")
     fanogan_model.evaluate()
+    print("Saving model")
+    fanogan_model.save()
