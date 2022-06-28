@@ -110,8 +110,8 @@ class FAnoGAN(nn.Module):
             ###########################
             # (1) Update D network
             ###########################
-            self.netG.eval()
-            self.netD.train()
+            # self.netG.eval()
+            # self.netD.train()
             for j, (_data, _) in enumerate(dataloader):
                 if j == CRITIC_ITERS:
                     break
@@ -147,8 +147,8 @@ class FAnoGAN(nn.Module):
             ###########################
             # (2) Update G network
             ###########################
-            self.netD.eval()
-            self.netG.train()
+            # self.netD.eval()
+            # self.netG.train()
             self.netG.zero_grad()
             noise = torch.randn(BATCH_SIZE, 128)
             noise = noise.to(device)
