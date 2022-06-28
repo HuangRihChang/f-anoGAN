@@ -26,7 +26,7 @@ sys.path.append(os.getcwd())
 MODE = 'wgan-gp'  # Valid options are dcgan, wgan, or wgan-gp
 DIM = 64  # This overfits substantially; you're probably better off with 64
 LAMBDA = 10  # Gradient penalty lambda hyperparameter
-CRITIC_ITERS = 1  # How many critic iterations per generator iteration
+CRITIC_ITERS = 5  # How many critic iterations per generator iteration
 BATCH_SIZE = 64  # Batch size
 ITERS = 100000  # How many generator iterations to train for
 OUTPUT_DIM = 3 * 64 * 64  # Number of pixels in image (3*64*64)
@@ -112,9 +112,12 @@ class FAnoGAN(nn.Module):
             ###########################
             self.netG.eval()
             self.netD.train()
-            G_ITER = int(G_ITER/iteration)
+            G_ITER = int(G_ITER*(1 - iteration/ITERS))
             for i in range(CRITIC_ITERS):
-                for (_data, _) in dataloader:
+                END_C_ITER = int(len(dataloader)*(1 - i/ITERS))
+                for j, (_data, _) in enumerate(dataloader):
+                    if j == END_C_ITER:
+                        break
                     self.netD.zero_grad()
                     # train with real
                     real_data = _data.to(device)
