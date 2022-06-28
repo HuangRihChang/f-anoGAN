@@ -112,40 +112,38 @@ class FAnoGAN(nn.Module):
             ###########################
             self.netG.eval()
             self.netD.train()
-            for i in range(CRITIC_ITERS):
-                END_C_ITER = int(len(dataloader)*0.2)
-                for j, (_data, _) in enumerate(dataloader):
-                    if j == END_C_ITER:
-                        break
-                    self.netD.zero_grad()
-                    # train with real
-                    real_data = _data.to(device)
-                    D_real = self.netD(real_data)
-                    D_real = D_real.mean()
-                    D_real.backward(mone)
-                    D_real_list.append(D_real.item())
-                    # train with fake
-                    noise = torch.randn(BATCH_SIZE, NOISE_SIZE)
-                    noise = noise.to(device)
-                    fake = self.netG(noise).detach()
-                    inputv = fake
-                    D_fake = self.netD(inputv)
-                    D_fake = D_fake.mean()
-                    D_fake.backward(one)
-                    D_fake_list.append(D_fake.item())
-                    # train with gradient penalty
-                    gradient_penalty = calc_gradient_penalty(self.netD, real_data.data, fake.data)
-                    gradient_penalty.backward()
-                    D_cost = D_fake - D_real + gradient_penalty
-                    D_cost_list.append(D_cost.item())
-                    # Wasserstein_D = D_real - D_fake
-                    self.optimizerD.step()
-                    tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
-                                D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
-                                Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
-                                Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
-                                phrase = "Critic"
-                                )
+            for j, (_data, _) in enumerate(dataloader):
+                if j == CRITIC_ITERS:
+                    break
+                self.netD.zero_grad()
+                # train with real
+                real_data = _data.to(device)
+                D_real = self.netD(real_data)
+                D_real = D_real.mean()
+                D_real.backward(mone)
+                D_real_list.append(D_real.item())
+                # train with fake
+                noise = torch.randn(BATCH_SIZE, NOISE_SIZE)
+                noise = noise.to(device)
+                fake = self.netG(noise).detach()
+                inputv = fake
+                D_fake = self.netD(inputv)
+                D_fake = D_fake.mean()
+                D_fake.backward(one)
+                D_fake_list.append(D_fake.item())
+                # train with gradient penalty
+                gradient_penalty = calc_gradient_penalty(self.netD, real_data.data, fake.data)
+                gradient_penalty.backward()
+                D_cost = D_fake - D_real + gradient_penalty
+                D_cost_list.append(D_cost.item())
+                # Wasserstein_D = D_real - D_fake
+                self.optimizerD.step()
+                tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
+                            D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
+                            Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
+                            Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                            phrase = "Critic"
+                            )
             ###########################
             # (2) Update G network
             ###########################
