@@ -113,8 +113,8 @@ class FAnoGAN(nn.Module):
             # self.netG.eval()
             # self.netD.train()
             for j, (_data, _) in enumerate(dataloader):
-                if j == CRITIC_ITERS:
-                    break
+                # if j == CRITIC_ITERS:
+                #     break
                 self.netD.zero_grad()
                 # train with real
                 real_data = _data.to(device)
@@ -166,7 +166,7 @@ class FAnoGAN(nn.Module):
                             phrase = "Genertor"
                             )
             #save samples
-            if iteration % 10 == 0 or iteration==ITERS:
+            if iteration % 100 == 0 or iteration==ITERS:
                 save_image(fake*0.5+0.5, 'wgangp/{}.jpg'.format(iteration))
 
     def train_encoder(self):
