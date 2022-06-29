@@ -105,7 +105,7 @@ class FAnoGAN(nn.Module):
         print(f"Train with {G_ITER} for Generator and {len(dataloader)} for Critic for each epoch")
         D_real_list, D_fake_list, D_cost_list, G_cost_list = [], [], [], []
 
-        tk = tqdm(range(1, ITERS + 1))
+        tk = tqdm(range(1, ITERS//len(dataloader) + 1))
         for iteration in tk:
             ###########################
             # (1) Update D network
@@ -113,8 +113,6 @@ class FAnoGAN(nn.Module):
             # self.netG.eval()
             # self.netD.train()
             for j, (_data, _) in enumerate(dataloader):
-                # if j == CRITIC_ITERS:
-                #     break
                 self.netD.zero_grad()
                 # train with real
                 real_data = _data.to(device)
@@ -144,27 +142,27 @@ class FAnoGAN(nn.Module):
                             Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
                             phrase = "Critic"
                             )
-            ###########################
-            # (2) Update G network
-            ###########################
-            # self.netD.eval()
-            # self.netG.train()
-            self.netG.zero_grad()
-            noise = torch.randn(BATCH_SIZE, 128)
-            noise = noise.to(device)
-            fake = self.netG(noise)
-            G = self.netD(fake).mean()
-            G.backward(mone)
-            G_cost = -G
-            self.optimizerG.step()
-            G_cost_list.append(G_cost.item())
-
-            tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
-                            D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
-                            Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
-                            Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
-                            phrase = "Genertor"
-                            )
+                if j%CRITIC_ITERS == 0:
+                    ###########################
+                    # (2) Update G network
+                    ###########################
+                    # self.netD.eval()
+                    # self.netG.train()
+                    self.netG.zero_grad()
+                    noise = torch.randn(BATCH_SIZE, 128)
+                    noise = noise.to(device)
+                    fake = self.netG(noise)
+                    G = self.netD(fake).mean()
+                    G.backward(mone)
+                    G_cost = -G
+                    self.optimizerG.step()
+                    G_cost_list.append(G_cost.item())
+                    tk.set_postfix(Iters=iteration, D_real=np.mean(D_real_list) if len(D_real_list) else 0, 
+                                    D_fake=np.mean(D_fake_list) if len(D_fake_list) else 0,
+                                    Loss_D=np.mean(D_cost_list) if len(D_cost_list) else 0,
+                                    Loss_G=np.mean(G_cost_list) if len(G_cost_list) else 0,
+                                    phrase = "Genertor"
+                                    )
             #save samples
             if iteration % 100 == 0 or iteration==ITERS:
                 save_image(fake*0.5+0.5, 'wgangp/{}.jpg'.format(iteration))
