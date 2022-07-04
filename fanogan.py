@@ -164,7 +164,7 @@ class FAnoGAN(nn.Module):
                                     phrase = "Genertor"
                                     )
                 #save samples
-                if int((iteration*len(dataloader) + j)%20) == 0 or iteration==ITERS:
+                if int((iteration*len(dataloader) + j)%200) == 0 or iteration==ITERS:
                     save_image(fake*0.5+0.5, f'wgangp/{int((iteration*len(dataloader) + j))}.jpg')
 
     def train_encoder(self):
@@ -276,8 +276,10 @@ if __name__ == '__main__':
 
     print("Train WGAN")
     fanogan_model.wgan_training()
+    fanogan_model.save()
     print("Train Encoder")
     fanogan_model.train_encoder()
+    fanogan_model.save()
     print("Evaluating")
     fanogan_model.evaluate()
     print("Saving model")
